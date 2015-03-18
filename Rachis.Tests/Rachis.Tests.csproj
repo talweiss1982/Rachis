@@ -105,7 +105,9 @@
     <Compile Include="CommandsTests.cs" />
     <Compile Include="DictionaryCommand.cs" />
     <Compile Include="DictionaryStateMachine.cs" />
-    <Compile Include="HttpTransportPingTest.cs" />
+    <Compile Include="Http\ElectionRelatedTests.cs" />
+    <Compile Include="Http\HttpRaftTestsBase.cs" />
+    <Compile Include="Http\HttpTransportPingTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ElectionRelatedTests.cs" />
     <Compile Include="RaftTestsBase.cs" />

@@ -26,7 +26,8 @@ namespace Rachis.Behaviors
 			_wonTrialElection = forcedElection;
 			_random = new Random((int)(engine.Name.GetHashCode() + DateTime.UtcNow.Ticks));
 			Timeout = _random.Next(engine.Options.ElectionTimeout / 2, engine.Options.ElectionTimeout);
-			StartElection();
+			if (forcedElection)
+				StartElection();
 		}
 
 		public override void HandleTimeout()
@@ -101,12 +102,12 @@ namespace Rachis.Behaviors
 
 		public override void Handle(RequestVoteResponse resp)
 		{
-            if (FromOurTopology(resp) == false)
-            {
-                _log.Info("Got a request vote response message outside my cluster topology (id: {0}), ignoring", resp.ClusterTopologyId);
-                return;
-            }
-			
+			if (FromOurTopology(resp) == false)
+			{
+				_log.Info("Got a request vote response message outside my cluster topology (id: {0}), ignoring", resp.ClusterTopologyId);
+				return;
+			}
+
 			long currentTerm = _wonTrialElection ? Engine.PersistentState.CurrentTerm : Engine.PersistentState.CurrentTerm + 1;
 			if (resp.VoteTerm != currentTerm)
 			{

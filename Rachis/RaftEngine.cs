@@ -63,11 +63,11 @@ namespace Rachis
 			}
 		}
 
-	
+
 		public long CommitIndex
 		{
 			get { return StateMachine.LastAppliedIndex; }
-			
+
 		}
 
 		public RaftEngineState State
@@ -121,10 +121,10 @@ namespace Rachis
 
 		public RaftEngine(RaftEngineOptions raftEngineOptions)
 		{
-//#if DEBUG
-//			Console.WriteLine("Press any key to continue loading Raft -> opportunity to attach debugger");
-//			Console.ReadLine();
-//#endif
+			//#if DEBUG
+			//			Console.WriteLine("Press any key to continue loading Raft -> opportunity to attach debugger");
+			//			Console.ReadLine();
+			//#endif
 			_raftEngineOptions = raftEngineOptions;
 			Debug.Assert(raftEngineOptions.Stopwatch != null);
 
@@ -225,8 +225,11 @@ namespace Rachis
 					StateBehavior = new FollowerStateBehavior(this, state == RaftEngineState.FollowerAfterStepDown);
 					break;
 				case RaftEngineState.CandidateByRequest:
+					StateBehavior = new CandidateStateBehavior(this, true);
+					break;
 				case RaftEngineState.Candidate:
-					StateBehavior = new CandidateStateBehavior(this, state == RaftEngineState.CandidateByRequest);
+					StateBehavior = new CandidateStateBehavior(this, false);
+					StateBehavior.HandleTimeout();
 					break;
 				case RaftEngineState.SnapshotInstallation:
 					StateBehavior = new SnapshotInstallationStateBehavior(this);
@@ -444,7 +447,7 @@ namespace Rachis
 					_log.Info("Starting to create snapshot up to {0} in term {1}", to, currentTerm);
 					StateMachine.CreateSnapshot(to, currentTerm, allowFurtherModifications);
 					PersistentState.MarkSnapshotFor(to, currentTerm,
-						Options.MaxLogLengthBeforeCompaction - (Options.MaxLogLengthBeforeCompaction/8));
+						Options.MaxLogLengthBeforeCompaction - (Options.MaxLogLengthBeforeCompaction / 8));
 
 					_log.Info("Finished creating snapshot for {0} in term {1}", to, currentTerm);
 
@@ -479,8 +482,8 @@ namespace Rachis
 			//if no topology was present and TopologyChangeCommand is issued to just
 			//accept new topology id - then tcc.Previous == null - it means that 
 			//shouldRemainInTopology should be true - because there is no removal from topology actually
-			var isRemovedFromTopology = tcc.Requested.Contains(Name) == false && 
-										 tcc.Previous != null && 
+			var isRemovedFromTopology = tcc.Requested.Contains(Name) == false &&
+										 tcc.Previous != null &&
 										 tcc.Previous.Contains(Name);
 			if (isRemovedFromTopology)
 			{
@@ -496,7 +499,7 @@ namespace Rachis
 				_log.Info("Finished applying new topology: {0}{1}", _currentTopology,
 					tcc.Previous == null ? ", Previous topology was null - perhaps it is setting topology for the first time?" : String.Empty);
 			}
-				
+
 			OnTopologyChanged(tcc);
 		}
 
@@ -606,7 +609,7 @@ namespace Rachis
 
 		protected virtual void OnTopologyChanged(TopologyChangeCommand cmd)
 		{
-			_log.Info ("OnTopologyChanged() - " + this.Name);
+			_log.Info("OnTopologyChanged() - " + this.Name);
 			var handler = TopologyChanged;
 			if (handler != null)
 			{
@@ -769,8 +772,8 @@ namespace Rachis
 			return string.Format("Name: {0} = {1}", Name, State);
 		}
 
-		internal void StartTopologyChange(TopologyChangeCommand tcc)
-		{			
+		public void StartTopologyChange(TopologyChangeCommand tcc)
+		{
 			Interlocked.Exchange(ref _currentTopology, tcc.Requested);
 			Interlocked.Exchange(ref _changingTopology, new TaskCompletionSource<object>().Task);
 			OnTopologyChanging(tcc);
