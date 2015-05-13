@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -382,7 +384,7 @@ namespace Rachis
 			leaderStateBehavior.AppendCommand(command);
 		}
 
-		public void ApplyCommits(long from, long to)
+		public void ApplyCommits(long @from, long to, Dictionary<long, Command> pendingCommands)
 		{
 			Debug.Assert(to >= from);
 			foreach (var entry in PersistentState.LogEntriesAfter(from, to))
@@ -393,6 +395,12 @@ namespace Rachis
 					var command = PersistentState.CommandSerializer.Deserialize(entry.Data);
 
 					StateMachine.Apply(entry, command);
+
+					Command parentCommand;
+					if (pendingCommands != null && pendingCommands.TryGetValue(command.AssignedIndex, out parentCommand))
+					{
+						parentCommand.CommandResult = command.CommandResult;
+					}
 
 					Debug.Assert(entry.Index == StateMachine.LastAppliedIndex);
 

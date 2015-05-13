@@ -557,7 +557,7 @@ namespace Rachis.Behaviors
 		protected void CommitEntries(LogEntry[] entries, long lastIndex)
 		{
 			var oldCommitIndex = Engine.CommitIndex + 1;
-			Engine.ApplyCommits(oldCommitIndex, lastIndex);			
+			Engine.ApplyCommits(oldCommitIndex, lastIndex, null);			
 			Engine.OnEntriesAppended(entries);
 		}
 

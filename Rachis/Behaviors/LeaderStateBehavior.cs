@@ -390,7 +390,7 @@ namespace Rachis.Behaviors
 			_log.Debug(
 				"AppendEntriesResponse => applying commits, maxIndexOnQuorom = {0}, Engine.CommitIndex = {1}", maxIndexOnCurrentQuorum,
 				Engine.CommitIndex);
-			Engine.ApplyCommits(Engine.CommitIndex + 1, maxIndexOnCurrentQuorum);
+			Engine.ApplyCommits(Engine.CommitIndex + 1, maxIndexOnCurrentQuorum, _pendingCommands.ToDictionary(x => x.AssignedIndex, x => x));
 
 			Command result;
 			while (_pendingCommands.TryPeek(out result) && result.AssignedIndex <= maxIndexOnCurrentQuorum)
