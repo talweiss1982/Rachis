@@ -83,7 +83,7 @@ namespace TailFeather.Controllers
             httpResponseMessage.Headers.Location = new UriBuilder(leaderNode.Uri)
             {
                 Path = baseUrl.LocalPath,
-                Query = baseUrl.Query,
+                Query = baseUrl.Query.TrimStart('?'),
                 Fragment = baseUrl.Fragment
             }.Uri;
             return httpResponseMessage;
