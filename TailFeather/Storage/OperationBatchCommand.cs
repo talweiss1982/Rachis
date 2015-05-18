@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using Rachis.Commands;
 
 namespace TailFeather.Storage
@@ -11,4 +12,11 @@ namespace TailFeather.Storage
     {
         public string Key { get; set; }
     }
+
+	public class CasCommand : Command
+	{
+		public string Key { get; set; }
+		public JToken Value;
+		public JToken PrevValue;
+	}
 }

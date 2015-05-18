@@ -87,6 +87,17 @@ namespace TailFeather.Client
 			return httpResponseMessage;
 		}
 
+		public async Task<bool> Cas(string key, JToken value, JToken previousValue)
+		{
+			var reply = await ContactServer(client => client.GetAsync(string.Format("tailfeather/key-val/cas?key={0}&val={1}&prevValue={2}",
+				Uri.EscapeDataString(key),
+				Uri.EscapeDataString(value.ToString(Formatting.None)),
+				Uri.EscapeDataString(previousValue.ToString(Formatting.None)))));
+			var result = JObject.Load(new JsonTextReader(new StreamReader(await reply.Content.ReadAsStreamAsync())));
+
+			return result.Value<bool>("ValueChanged");
+		}
+
 		public Task Set(string key, JToken value)
 		{
 			return ContactServer(client => client.GetAsync(string.Format("tailfeather/key-val/set?key={0}&val={1}",
