@@ -136,13 +136,15 @@ namespace TailFeather.Controllers
 				jPrevVal = prevValue;
 			}
 
+		
+			var taskCompletionSource = new TaskCompletionSource<object>();
 			var op = new CasCommand
 			{
 				Key = key,
 				Value = jVal,
-				PrevValue = jPrevVal
+				PrevValue = jPrevVal,
+				Completion = taskCompletionSource
 			};
-			var taskCompletionSource = new TaskCompletionSource<object>();
 			try
 			{
 				RaftEngine.AppendCommand(op);

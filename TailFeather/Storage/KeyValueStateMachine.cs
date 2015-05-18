@@ -62,12 +62,12 @@ namespace TailFeather.Storage
 
 		public bool Cas(CasCommand op)
 		{
-			using (var tx = _storageEnvironment.NewTransaction(TransactionFlags.Read))
+			using (var tx = _storageEnvironment.NewTransaction(TransactionFlags.ReadWrite))
 			{
 				var items = tx.ReadTree("items");
 				var oldValue = items.Read(op.Key);
 				var ms = new MemoryStream();
-				var oldToken = JToken.ReadFrom(new JsonTextReader(new StreamReader(oldValue.Reader.AsStream())));
+				var oldToken = oldValue == null ? JValue.CreateNull() : JToken.ReadFrom(new JsonTextReader(new StreamReader(oldValue.Reader.AsStream())));
 				if (!new JTokenEqualityComparer().Equals(oldToken, op.PrevValue))
 				{
 					return false;
@@ -81,6 +81,7 @@ namespace TailFeather.Storage
 
 				ms.Position = 0;
 				items.Add(op.Key, ms);
+				tx.Commit();
 				return true;
 			}
 		}
