@@ -8,7 +8,6 @@ using System.Web.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Rachis;
-using Rachis.Transport;
 using Rachis.Utils;
 using TailFeather.Storage;
 
@@ -83,7 +82,7 @@ namespace TailFeather.Controllers
             httpResponseMessage.Headers.Location = new UriBuilder(leaderNode.Uri)
             {
                 Path = baseUrl.LocalPath,
-                Query = baseUrl.Query,
+                Query = baseUrl.Query.TrimStart('?'),
                 Fragment = baseUrl.Fragment
             }.Uri;
             return httpResponseMessage;
@@ -112,6 +111,56 @@ namespace TailFeather.Controllers
 
             return Batch(new[] { op });
         }
+
+		[HttpGet]
+		[Route("tailfeather/key-val/cas")]
+		public async Task<HttpResponseMessage> Cas([FromUri] string key, [FromUri] string val, [FromUri] string prevValue)
+		{
+			JToken jVal;
+			try
+			{
+				jVal = JToken.Parse(val);
+			}
+			catch (JsonReaderException)
+			{
+				jVal = val;
+			}
+
+			JToken jPrevVal;
+			try
+			{
+				jPrevVal = JToken.Parse(prevValue);
+			}
+			catch (JsonReaderException)
+			{
+				jPrevVal = prevValue;
+			}
+
+		
+			var taskCompletionSource = new TaskCompletionSource<object>();
+			var op = new CasCommand
+			{
+				Key = key,
+				Value = jVal,
+				PrevValue = jPrevVal,
+				Completion = taskCompletionSource
+			};
+			try
+			{
+				RaftEngine.AppendCommand(op);
+			}
+			catch (NotLeadingException e)
+			{
+				return RedirectToLeader(e.CurrentLeader, Request.RequestUri);
+			}
+			var newValueSet = await taskCompletionSource.Task;
+			return Request.CreateResponse(HttpStatusCode.OK, new
+			{
+				RaftEngine.State,
+				Key = key,
+				ValueChanged = newValueSet
+			});
+		}
 
         [HttpGet]
         [Route("tailfeather/key-val/del")]

@@ -60,6 +60,32 @@ namespace TailFeather.Storage
 			}
 		}
 
+		public bool Cas(CasCommand op)
+		{
+			using (var tx = _storageEnvironment.NewTransaction(TransactionFlags.ReadWrite))
+			{
+				var items = tx.ReadTree("items");
+				var oldValue = items.Read(op.Key);
+				var ms = new MemoryStream();
+				var oldToken = oldValue == null ? JValue.CreateNull() : JToken.ReadFrom(new JsonTextReader(new StreamReader(oldValue.Reader.AsStream())));
+				if (!new JTokenEqualityComparer().Equals(oldToken, op.PrevValue))
+				{
+					return false;
+				}
+
+				ms.SetLength(0);
+
+				var writer = new StreamWriter(ms);
+				op.Value.WriteTo(new JsonTextWriter(writer));
+				writer.Flush();
+
+				ms.Position = 0;
+				items.Add(op.Key, ms);
+				tx.Commit();
+				return true;
+			}
+		}
+
 		public long LastAppliedIndex
 		{
 			get { return _lastAppliedIndex; }
@@ -79,6 +105,12 @@ namespace TailFeather.Storage
 		    {
 		        cmd.CommandResult = Read(get.Key);
 		    }
+			var cas = cmd as CasCommand;
+			if (cas != null)
+			{
+				cmd.CommandResult = Cas(cas);
+
+			}
             // have to apply even get command so we'll keep track of the last applied index
 		    Apply(Enumerable.Empty<KeyValueOperation>(), cmd.AssignedIndex);
 		}

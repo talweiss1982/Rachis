@@ -10,16 +10,22 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Web.Http;
+
 using Microsoft.Owin.Hosting;
+
 using Newtonsoft.Json;
+
 using Owin;
+
 using Rachis.Messages;
 using Rachis.Storage;
 using Rachis.Transport;
+
 using Voron;
+
 using Xunit;
 
-namespace Rachis.Tests
+namespace Rachis.Tests.Http
 {
 	public class HttpTransportPingTest : IDisposable
 	{
