@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>TailFeather studio</title>
+</head>
+<body>
+    <script type="text/javascript" src="Scripts/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="Scripts/knockout-3.2.0.js"></script>
+    <script type="text/javascript" src="Scripts/knockout.mapping-2.4.1.js"></script>
+    <script type="text/javascript" src="Scripts/require.js" data-main="App/main"></script>
+    <script type="text/javascript">
+        $(function () {
+        });
+    </script>
+    <div id="homeViewModel">
+        <div>
+            <input type="button" data-bind="click:createCluster,enable:!clusterCreated()" value="Create tailfeather cluster"/>
+            <input type="button" data-bind="click:refreshTopology,enable:clusterCreated()" value="Fetch latest topology" />
+            <span>Base directory</span>
+            <input type="text" data-bind="value:baseDir"/>
+            <span>From port</span>
+            <input type="number" data-bind="value:fromPort"/>
+            <span>Size of cluster</span>
+            <input type="number" data-bind="value:sizeOfCluster"/>
+            <span>Leader port</span>
+            <input type="number" data-bind="value:leaderPort"/>
+
+        </div>
+        <table cellpadding="10">
+            <thead>
+            <tr>
+                <th>Node name</th>
+                <th>Url</th>
+                <th>State</th>
+                <th>Kill</th>
+                <th>Revive</th>
+            </tr>
+            </thead>
+            <tbody data-bind="foreach:nodes">
+            <td data-bind="text: Name"></td>
+            <td data-bind="text: Uri"></td>
+            <td data-bind="text: State"></td>
+            <td><input type="button" data-bind="click:$root.killNode.bind($root,$data)" value="Kill"/></td>
+            <td><input type="button" data-bind="click:$root.reviveNode.bind($root,$data)" value="Revive"/></td>
+            </tbody>
+        </table>
+             <div>
+               <label>Key</label>
+               <input type="text" data-bind="value:key"/>
+           </div>
+           <div style="margin: 10px">
+               <input type="button" data-bind="click:setKey" value="Set"/>
+               <label>Write value</label>
+               <input type="text" data-bind="value:writeValue" />
+           </div>
+           <div style="margin: 10px">
+               <input type="button" data-bind="click:readKey" value="Read"/>
+               <label>Read value</label>
+               <input type="text" data-bind="value:readValue" />
+           </div>
+        <div style="margin: 10px">
+            <input type="button" data-bind="click:deleteKey" value="Delete"/>
+        </div>
+        <div style="margin: 10px">
+            <input type="button" data-bind="click:fetchAllValues" value="Fetch all values" />
+        </div>
+        <table cellpadding="10">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach:keysAndValues">
+            <td data-bind="text: Key"></td>
+            <td data-bind="text: Value"></td>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        $(function () {
+        });
+    </script>
+</body>
+
+
+
+</html>

@@ -178,10 +178,10 @@ namespace TailFeather.Storage
 		private void DoFullBackup(long index, long term, ManualResetEventSlim allowFurtherModifications)
 		{
 			var snapshotsToDelete = Directory.GetFiles(_storageEnvironment.Options.BasePath, "*.Snapshot");
-
+            var cacellation = new CancellationToken();
 			var fullBackup = new FullBackup();
 			fullBackup.ToFile(_storageEnvironment,
-				Path.Combine(_storageEnvironment.Options.BasePath, string.Format("Full-{0:D19}-{1:D19}.Snapshot", index, term)),
+				Path.Combine(_storageEnvironment.Options.BasePath, string.Format("Full-{0:D19}-{1:D19}.Snapshot", index, term)), cacellation,
 				infoNotify: Console.WriteLine,
 				backupStarted: allowFurtherModifications.Set
 				);

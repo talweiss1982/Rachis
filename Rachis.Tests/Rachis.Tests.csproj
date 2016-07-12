@@ -93,6 +93,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Voron, Version=1.0.0.0, Culture=neutral, PublicKeyToken=37f41c7f99471593, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Voron\Voron.dll</HintPath>
+    </Reference>
     <Reference Include="xunit">
       <HintPath>..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
     </Reference>
@@ -121,10 +125,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ravendb\Raven.Voron\Voron\Voron.csproj">
-      <Project>{FF83C7C2-BC7B-4DCC-A782-49EF9BBD9390}</Project>
-      <Name>Voron</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Rachis\Rachis.csproj">
       <Project>{F796F69F-D17B-4260-92D6-65CB94C0E05C}</Project>
       <Name>Rachis</Name>

@@ -27,7 +27,10 @@ namespace TailFeather
 			}
 
 			var nodeName = options.NodeName ?? (Environment.MachineName + ":" + options.Port);
-			Console.Title = string.Format("Node name: {0}, port: {1}", nodeName, options.Port);
+		    NonAdminHttp.EnsureCanListenToWhenInNonAdminContext(options.Port);
+		    Program.nodeName = nodeName;
+		    Program.port = options.Port;
+            Console.Title = string.Format("Node name: {0}, port: {1}", nodeName, options.Port);
 
 			var kvso = StorageEnvironmentOptions.ForPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, options.DataPath, "KeyValue"));
 			using (var statemachine = new KeyValueStateMachine(kvso))
@@ -59,7 +62,9 @@ namespace TailFeather
 
 				using (var raftEngine = new RaftEngine(raftEngineOptions))
 				{
-					using (WebApp.Start(new StartOptions
+				    raftEngine.StateChanged += OnStateChange;
+
+                    using (WebApp.Start(new StartOptions
 					{
 						Urls = { "http://+:" + options.Port + "/" }
 					}, builder =>
@@ -82,5 +87,15 @@ namespace TailFeather
 				}
 			}
 		}
+
+	    private static string nodeName;
+        private static int port;
+        private static void OnStateChange(RaftEngineState state)
+	    {
+	        if(state == RaftEngineState.Leader)
+                Console.Title = string.Format("Leader - Node name: {0}, port: {1}", nodeName, port);
+	        else
+                Console.Title = string.Format("Node name: {0}, port: {1}", nodeName, port);
+        }
 	}
 }
