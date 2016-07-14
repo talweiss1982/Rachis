@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,6 +60,8 @@ namespace TailFeatherDemoServer
                 request.Method = HttpMethod.Get.Method;
                 request.GetResponse();
             }
+            var topology = GetClusterTopology(leaderPort ?? fromPort);
+            File.WriteAllText(Path.Combine(baseDir,"topology.json"), JObject.FromObject(topology).ToString());            
             return GetClusterTopology(leaderPort ?? fromPort);
         }
 
@@ -97,18 +100,39 @@ namespace TailFeatherDemoServer
             get { return _topology; }
             private set
             {                
-                var uries = value.AllVotingNodes.Select(x => x.Uri);
-                    uries.Union(value.NonVotingNodes.Select(x => x.Uri));
-                    uries.Union(value.PromotableNodes.Select(x => x.Uri));
-                if (Client != null)
-                {
-                    Client.Dispose();
-                }
-                Client = new TailFeatherClient(uries.ToArray());                    
+                var uries = GetAllNodesUries(value);
+                Client?.Dispose();
+                if(uries!= null && uries.Any())
+                    Client = new TailFeatherClient(uries.ToArray());                    
                 _topology = value;
             }
         }
 
+        private static IEnumerable<Uri> GetAllNodesUries(TailFeatherTopology value)
+        {
+            var uries = value.AllVotingNodes?.Select(x => x.Uri);
+            uries?.Union(value.NonVotingNodes?.Select(x => x.Uri));
+            uries?.Union(value.PromotableNodes?.Select(x => x.Uri));
+            return uries;
+        }
+
+        private static Dictionary<string,Uri> GetAllNodesUriesAsDictionary(TailFeatherTopology value)
+        {
+            var res = new Dictionary<string,Uri>();
+            foreach (var nodeConnectionInfo in value.AllVotingNodes)
+            {
+                res[nodeConnectionInfo.Name] = nodeConnectionInfo.Uri;
+            }
+            foreach (var nodeConnectionInfo in value.NonVotingNodes)
+            {
+                res[nodeConnectionInfo.Name] = nodeConnectionInfo.Uri;
+            }
+            foreach (var nodeConnectionInfo in value.PromotableNodes)
+            {
+                res[nodeConnectionInfo.Name] = nodeConnectionInfo.Uri;
+            }
+            return res;
+        }
         public TailFeatherClient Client { get; set; }
 
         //TailFeatherClient
@@ -118,6 +142,13 @@ namespace TailFeatherDemoServer
         {
             portsToProcess.Clear();
             this.baseDir = baseDir;
+            //Assuming the running process are the ones in the topology...
+            //I could get the ports from the title of the process but this is just a demo...
+            var topoFilePath = Path.Combine(baseDir, "topology.json");
+            if (File.Exists(topoFilePath) && Process.GetProcessesByName("TailFeather").Length == sizeOfCluster)
+            {
+                return JsonConvert.DeserializeObject<TailFeatherTopology>(File.ReadAllText(topoFilePath));
+            }
             for (var i = fromPort; i < fromPort + sizeOfCluster; ++i)
             {
                 var nodeName = $"Node{i}";
@@ -144,9 +175,33 @@ namespace TailFeatherDemoServer
             Process p;
             if (int.TryParse(name.Substring(4), out port) && portsToProcess.TryGetValue(port, out p))
             {
-                p.Kill();
+                try
+                {
+                    p.Kill();
+                }
+                catch 
+                {
+                    //what can i do...
+                }
                 portsToProcess.Remove(port);
             }            
+        }
+
+        public TailFeatherTopology KillAllNodes()
+        {
+            foreach (var process in portsToProcess.Values)
+            {
+                try
+                {
+                    process.Kill();
+                }
+                catch 
+                {
+                }
+            }
+            portsToProcess.Clear();
+            Topology = new TailFeatherTopology();
+            return Topology;
         }
 
         public void ReviveNode(string name)
@@ -176,9 +231,67 @@ namespace TailFeatherDemoServer
             return val;
         }
 
-        public object ReadAll()
+        //very inefficient, just for the demo...
+        public async Task<object> ReadAll()
         {
-            return keysToJObjects.Select(x=>new {x.Key,x.Value}).ToArray();
+            if (Topology == null)
+                return null;
+            var nodesToUries = GetAllNodesUriesAsDictionary(Topology);
+            var res = new Dictionary<string,dynamic[]>();
+            List<Task> readingTasks = new List<Task>();
+            foreach (var nameAndUri in nodesToUries)
+            {
+                    var readTask = Task.Run(() => ReadAllKeysFromSingleSource(nameAndUri)).ContinueWith((t) =>
+                    {
+                        if (t.Status == TaskStatus.RanToCompletion)
+                        {
+                            res[nameAndUri.Key] = t.Result;
+                        }
+                    });
+                readingTasks.Add(readTask);
+            }
+            await Task.WhenAll(readingTasks);
+            return GenerateStudioReadyResult(res);
+        }
+
+        private object GenerateStudioReadyResult(Dictionary<string, dynamic[]> res)
+        {
+            var nodesNamesAsList = res.Keys.ToList();
+            int keyIndex = 0;
+            var allKeysAndValuesArray = new dynamic[keysToJObjects.Keys.Count];
+            foreach (var key in keysToJObjects.Keys)
+            {
+                var keyValuesArray = new dynamic[nodesNamesAsList.Count + 1];
+                var colIndex = 0;
+                keyValuesArray[colIndex++] = key;
+                foreach (var nodeName in nodesNamesAsList)
+                {
+                    keyValuesArray[colIndex++] = res[nodeName][keyIndex];
+                    if (keyValuesArray[colIndex - 1] == null)
+                        keyValuesArray[colIndex - 1] = "--empty--";
+                }
+                allKeysAndValuesArray[keyIndex++] = keyValuesArray;
+            }
+            var studioReadyResult = new {Nodes = nodesNamesAsList, KeysValues = allKeysAndValuesArray};
+            return studioReadyResult;
+        }
+
+        private dynamic[] ReadAllKeysFromSingleSource(KeyValuePair<string, Uri> nameAndUri)
+        {
+            dynamic[] resArray = new dynamic[keysToJObjects.Keys.Count];
+            int i = 0;
+            foreach (var keyToRead in keysToJObjects.Keys)
+            {
+                var request = WebRequest.Create($"{nameAndUri.Value}/tailfeather/key-val/read?key={keyToRead}");
+                request.Method = HttpMethod.Get.Method;
+                using (var reader = new StreamReader(request.GetResponse().GetResponseStream()))
+                {
+                    var responseAsString = reader.ReadToEnd();
+
+                    resArray[i++] =  JObject.Parse(responseAsString)["Value"];
+                }
+            }
+            return resArray;
         }
 
         public async Task SetKey(string key,JToken val)
@@ -210,7 +323,5 @@ namespace TailFeatherDemoServer
 #else
         private static string Mode = "Release";
 #endif
-
-
     }
 }

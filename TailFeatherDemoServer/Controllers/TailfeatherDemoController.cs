@@ -1,8 +1,10 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using TailFeather.Client;
 
 namespace TailFeatherDemoServer.Controllers
 {
@@ -43,6 +45,14 @@ namespace TailFeatherDemoServer.Controllers
             TailFeatherCluster.Instance.KillNode(name);
             return TailFeatherCluster.Instance.TryGetTopologyFromVotingNodes();
         }
+
+        [HttpGet]
+        [Route("demo/kill-them-all")]
+        public object KillThemAll()
+        {
+            return TailFeatherCluster.Instance.KillAllNodes();             
+        }
+
         [HttpGet]
         [Route("demo/revive-node")]
         public object ReviveNode([FromUri] string name)
@@ -60,9 +70,18 @@ namespace TailFeatherDemoServer.Controllers
 
         [HttpGet]
         [Route("demo/read-all")]
-        public object Readall()
+        public async Task<object> Readall()
         {
-            return TailFeatherCluster.Instance.ReadAll();
+            return await TailFeatherCluster.Instance.ReadAll();
+        }
+
+        [HttpPost]
+        [Route("demo/append")]
+        public void Append([FromUri] string key)
+        {
+            HttpContent requestContent = Request.Content;
+            string jsonContent = requestContent.ReadAsStringAsync().Result;
+            throw new NotImplementedException();
         }
 
         [HttpPost]

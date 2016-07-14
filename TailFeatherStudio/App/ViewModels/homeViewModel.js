@@ -3,7 +3,8 @@ define(["require", "exports"], function (require, exports) {
     var homeViewModel = (function () {
         function homeViewModel() {
             this.nodes = ko.observableArray([]);
-            this.keysAndValues = ko.observableArray([]);
+            this.NodesNames = ko.observableArray([]);
+            this.KeysWithValues = ko.observableArray([]);
             this.fromPort = ko.observable(8090);
             this.sizeOfCluster = ko.observable(5);
             this.baseDir = ko.observable("c:\\work\\tailfeather\\");
@@ -12,6 +13,7 @@ define(["require", "exports"], function (require, exports) {
             this.key = ko.observable("");
             this.readValue = ko.observable("");
             this.writeValue = ko.observable("");
+            this.appendValue = ko.observable("");
         }
         homeViewModel.prototype.createCluster = function () {
             var _this = this;
@@ -40,6 +42,13 @@ define(["require", "exports"], function (require, exports) {
                 _this.nodes(_this.topologyToNodes(x));
             });
         };
+        homeViewModel.prototype.killThemAll = function () {
+            var _this = this;
+            $.ajax("/demo/kill-them-all", "GET").done(function (x) {
+                _this.nodes(_this.topologyToNodes(x));
+                _this.clusterCreated(false);
+            });
+        };
         homeViewModel.prototype.GetkillNodeText = function (node) {
             return "Kill " + node.Name;
         };
@@ -56,12 +65,23 @@ define(["require", "exports"], function (require, exports) {
                 _this.readValue(x);
             });
         };
+        homeViewModel.prototype.append = function () {
+            var url = "/demo/append?key=" + this.key();
+            var value = this.appendValue();
+            var self = this;
+            $.post(url, value, function (returnedData) {
+                //this is just so the UI will refresh on write nicly
+                self.fetchAllValues();
+            });
+        };
         homeViewModel.prototype.setKey = function () {
             var key = this.key();
             var writeValue = this.writeValue();
             var self = this;
             $.post("/demo/set-key?key=" + key, writeValue, function (returnedData) {
                 self.writeValue("");
+                //this is just so the UI will refresh on write nicly
+                self.fetchAllValues();
             });
         };
         homeViewModel.prototype.deleteKey = function () {
@@ -94,12 +114,16 @@ define(["require", "exports"], function (require, exports) {
         };
         homeViewModel.prototype.fetchAllValues = function () {
             var _this = this;
+            var self = this;
             $.ajax("/demo/read-all", "GET").done(function (x) {
-                _this.keysAndValues(x);
+                self.NodesNames(x.Nodes);
+                _this.KeysWithValues([]);
+                for (var i = 0; i < x.KeysValues.length; i++) {
+                    _this.KeysWithValues.push(x.KeysValues[i]);
+                }
             });
         };
         return homeViewModel;
     }());
     return homeViewModel;
 });
-//# sourceMappingURL=homeViewModel.js.map

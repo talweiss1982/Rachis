@@ -1,6 +1,7 @@
 ﻿class homeViewModel {
     nodes = ko.observableArray([]);
-    keysAndValues = ko.observableArray([]);
+    NodesNames = ko.observableArray([]);
+    KeysWithValues = ko.observableArray([]);
     fromPort = ko.observable(8090);
     sizeOfCluster = ko.observable(5);
     baseDir = ko.observable("c:\\work\\tailfeather\\");
@@ -9,6 +10,7 @@
     key = ko.observable("");
     readValue = ko.observable("");
     writeValue = ko.observable("");
+    appendValue = ko.observable("");
     createCluster() {
         if (this.clusterCreated())
             return;
@@ -33,6 +35,13 @@
             this.nodes(this.topologyToNodes(x));
         });
     }
+    killThemAll() {
+        $.ajax("/demo/kill-them-all", "GET").done(x => {
+            this.nodes(this.topologyToNodes(x));
+            this.clusterCreated(false);
+        });        
+    }
+    
     GetkillNodeText(node) {
         return "Kill " + node.Name;
     }
@@ -47,12 +56,23 @@
             this.readValue(x);
         }); 
     }
+    append() {
+        var url = "/demo/append?key=" + this.key();
+        var value = this.appendValue();
+        var self = this;
+        $.post(url, value, function (returnedData) {
+            //this is just so the UI will refresh on write nicly
+            self.fetchAllValues();
+        });
+    }
     setKey() {
         var key = this.key();
         var writeValue = this.writeValue();
         var self = this;
         $.post("/demo/set-key?key=" + key, writeValue, function (returnedData) {
-            self.writeValue("");    
+            self.writeValue("");
+            //this is just so the UI will refresh on write nicly
+            self.fetchAllValues();
         });
     }
     deleteKey() {
@@ -86,8 +106,13 @@
     }
 
     fetchAllValues() {
+        var self = this;
         $.ajax("/demo/read-all", "GET").done(x => {
-            this.keysAndValues(x);
+            self.NodesNames(x.Nodes);
+            this.KeysWithValues([]);
+            for (var i = 0; i < x.KeysValues.length; i++) {
+                this.KeysWithValues.push(x.KeysValues[i]);
+            }
         });
     }
 }

@@ -24,7 +24,8 @@
             <input type="number" data-bind="value:sizeOfCluster"/>
             <span>Leader port</span>
             <input type="number" data-bind="value:leaderPort"/>
-
+            <br/>
+            <input type="button" data-bind="click:killThemAll" value="Kill cluster" />
         </div>
         <table cellpadding="10">
             <thead>
@@ -53,11 +54,16 @@
                <label>Write value</label>
                <input type="text" data-bind="value:writeValue" />
            </div>
-           <div style="margin: 10px">
-               <input type="button" data-bind="click:readKey" value="Read"/>
-               <label>Read value</label>
-               <input type="text" data-bind="value:readValue" />
-           </div>
+        <div style="margin: 10px">
+            <input type="button" data-bind="click:readKey" value="Read"/>
+            <label>Read value</label>
+            <input type="text" data-bind="value:readValue"/>
+        </div>
+        <div style="margin: 10px">
+            <input type="button" data-bind="click:append" value="Append" />
+            <label>Append value</label>
+            <input type="text" data-bind="value:appendValue" />
+        </div>
         <div style="margin: 10px">
             <input type="button" data-bind="click:deleteKey" value="Delete"/>
         </div>
@@ -66,14 +72,23 @@
         </div>
         <table cellpadding="10">
             <thead>
-                <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                </tr>
+            <tr>
+                <th>Key</th>
+                <!-- ko foreach: NodesNames -->
+                <th data-bind="text: $data"></th>
+                <!-- /ko -->
+            </tr>
             </thead>
-            <tbody data-bind="foreach:keysAndValues">
-            <td data-bind="text: Key"></td>
-            <td data-bind="text: Value"></td>
+            <tbody>
+                <!-- ko foreach:KeysWithValues -->
+                <tr>
+                    <!-- ko foreach: $data -->
+
+                    <td data-bind="text: $data"> </td>
+
+                    <!-- /ko -->
+                </tr>
+                <!-- /ko -->
             </tbody>
         </table>
     </div>
