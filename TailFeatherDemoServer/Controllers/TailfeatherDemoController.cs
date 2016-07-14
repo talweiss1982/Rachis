@@ -81,7 +81,7 @@ namespace TailFeatherDemoServer.Controllers
         {
             HttpContent requestContent = Request.Content;
             string jsonContent = requestContent.ReadAsStringAsync().Result;
-            throw new NotImplementedException();
+            TailFeatherCluster.Instance.Append(key, jsonContent);
         }
 
         [HttpPost]

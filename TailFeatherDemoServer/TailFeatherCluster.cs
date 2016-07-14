@@ -301,7 +301,12 @@ namespace TailFeatherDemoServer
             await Client.Set(key, val);
             keysToJObjects[key] = val;
         }
-
+        public async Task Append(string key, string jsonContent)
+        {
+            if (Client == null)
+                return;
+            await Client.Append(key, jsonContent);
+        }
         public async Task DeleteKey(string key)
         {
             if (Client == null)

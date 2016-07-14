@@ -112,7 +112,31 @@ namespace TailFeather.Controllers
             return Batch(new[] { op });
         }
 
-		[HttpGet]
+        [HttpGet]
+        [Route("tailfeather/key-val/append")]
+        public Task<HttpResponseMessage> Append([FromUri] string key, [FromUri] string val)
+        {
+            JToken jVal;
+            try
+            {
+                jVal = JToken.Parse(val);
+            }
+            catch (JsonReaderException)
+            {
+                jVal = val;
+            }
+
+            var op = new KeyValueOperation
+            {
+                Key = key,
+                Type = KeyValueOperationTypes.Append,
+                Value = jVal
+            };
+
+            return Batch(new[] { op });
+        }
+
+        [HttpGet]
 		[Route("tailfeather/key-val/cas")]
 		public async Task<HttpResponseMessage> Cas([FromUri] string key, [FromUri] string val, [FromUri] string prevValue)
 		{

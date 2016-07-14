@@ -332,7 +332,10 @@ namespace TailFeather.Storage
 				{
 					switch (op.Type)
 					{
-						case KeyValueOperationTypes.Add:
+                        case KeyValueOperationTypes.Append:
+                            //TODO: implement this
+					        break;
+                        case KeyValueOperationTypes.Add:
 							ms.SetLength(0);
 
 							var streamWriter = new StreamWriter(ms);

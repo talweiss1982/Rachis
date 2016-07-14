@@ -104,7 +104,13 @@ namespace TailFeather.Client
 				Uri.EscapeDataString(key), Uri.EscapeDataString(value.ToString(Formatting.None)))));
 		}
 
-		public async Task<JToken> Get(string key)
+        public Task Append(string key, string jsonContent)
+        {
+            return ContactServer(client => client.GetAsync(string.Format("tailfeather/key-val/append?key={0}&val={1}",
+                Uri.EscapeDataString(key), Uri.EscapeDataString(jsonContent))));
+        }
+
+        public async Task<JToken> Get(string key)
 		{
 			var reply = await ContactServer(client => client.GetAsync(string.Format("tailfeather/key-val/read?key={0}",
 				Uri.EscapeDataString(key))));
