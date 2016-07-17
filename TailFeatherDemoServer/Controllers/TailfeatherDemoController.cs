@@ -77,11 +77,11 @@ namespace TailFeatherDemoServer.Controllers
 
         [HttpPost]
         [Route("demo/append")]
-        public void Append([FromUri] string key)
+        public Task Append([FromUri] string key)
         {
             HttpContent requestContent = Request.Content;
             string jsonContent = requestContent.ReadAsStringAsync().Result;
-            TailFeatherCluster.Instance.Append(key, jsonContent);
+            return TailFeatherCluster.Instance.Append(key, jsonContent);
         }
 
         [HttpPost]

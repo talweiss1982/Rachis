@@ -1,4 +1,4 @@
-﻿class homeViewModel {
+﻿class homeViewModel {    
     nodes = ko.observableArray([]);
     NodesNames = ko.observableArray([]);
     KeysWithValues = ko.observableArray([]);
